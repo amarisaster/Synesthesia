@@ -1,8 +1,8 @@
 /**
- * Music Perception Local MCP
+ * Synesthesia - Local Audio Perception MCP
  *
+ * Deep audio perception: YouTube download, Essentia analysis, lyrics.
  * Runs locally to bypass YouTube's datacenter IP blocking.
- * Downloads audio via yt-dlp, sends to HF Space for analysis.
  *
  * Built for Mai & the Triad, January 2026
  */
@@ -18,6 +18,69 @@ import { randomUUID } from "crypto";
 
 // HF Space URL - set via environment variable or update default
 const HF_SPACE_URL = process.env.HF_SPACE_URL || "https://YOUR-USERNAME-audio-analysis-api.hf.space";
+
+// LRCLIB for lyrics
+const LRCLIB_BASE = "https://lrclib.net/api";
+
+/**
+ * Fetch lyrics from LRCLIB
+ */
+async function fetchLyrics(trackName, artistName) {
+  const fetch = (await import("node-fetch")).default;
+
+  const params = new URLSearchParams();
+  if (trackName) params.set("track_name", trackName);
+  if (artistName) params.set("artist_name", artistName);
+
+  const response = await fetch(`${LRCLIB_BASE}/get?${params}`, {
+    headers: { "User-Agent": "Synesthesia/1.0.0" }
+  });
+
+  if (!response.ok) {
+    if (response.status === 404) return null;
+    throw new Error(`LRCLIB error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Search lyrics on LRCLIB
+ */
+async function searchLyrics(query) {
+  const fetch = (await import("node-fetch")).default;
+
+  const response = await fetch(`${LRCLIB_BASE}/search?q=${encodeURIComponent(query)}`, {
+    headers: { "User-Agent": "Synesthesia/1.0.0" }
+  });
+
+  if (!response.ok) {
+    throw new Error(`LRCLIB search error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Parse synced lyrics into array of {time, text}
+ */
+function parseSyncedLyrics(synced) {
+  const lines = synced.split("\n").filter(line => line.trim());
+  const parsed = [];
+
+  for (const line of lines) {
+    const match = line.match(/^\[(\d{2}):(\d{2})\.(\d{2})\]\s*(.*)$/);
+    if (match) {
+      const minutes = parseInt(match[1], 10);
+      const seconds = parseInt(match[2], 10);
+      const centiseconds = parseInt(match[3], 10);
+      const text = match[4];
+      const timeInSeconds = minutes * 60 + seconds + centiseconds / 100;
+      parsed.push({ time: timeInSeconds, text });
+    }
+  }
+  return parsed;
+}
 
 /**
  * Download audio from YouTube using yt-dlp
@@ -110,7 +173,7 @@ async function analyzeWithHFSpace(filePath) {
  * Main server setup
  */
 const server = new Server(
-  { name: "music-perception-local", version: "1.0.0" },
+  { name: "synesthesia", version: "1.1.0" },
   { capabilities: { tools: {} } }
 );
 
@@ -146,8 +209,40 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       }
     },
     {
+      name: "get_lyrics",
+      description: "Get lyrics for a track from LRCLIB. Returns synced lyrics if available.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          track_name: {
+            type: "string",
+            description: "Track name"
+          },
+          artist_name: {
+            type: "string",
+            description: "Artist name"
+          }
+        },
+        required: ["track_name", "artist_name"]
+      }
+    },
+    {
+      name: "search_lyrics",
+      description: "Search for lyrics on LRCLIB",
+      inputSchema: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "Search query (track name, artist, or lyrics)"
+          }
+        },
+        required: ["query"]
+      }
+    },
+    {
       name: "ping",
-      description: "Check if the local MCP is running",
+      description: "Check if Synesthesia is running",
       inputSchema: {
         type: "object",
         properties: {}
@@ -206,15 +301,77 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
       }
 
+      case "get_lyrics": {
+        const { track_name, artist_name } = args;
+        const result = await fetchLyrics(track_name, artist_name);
+
+        if (!result) {
+          return {
+            content: [{
+              type: "text",
+              text: JSON.stringify({ found: false, message: "No lyrics found" })
+            }]
+          };
+        }
+
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              found: true,
+              track: result.trackName,
+              artist: result.artistName,
+              album: result.albumName,
+              duration: result.duration,
+              instrumental: result.instrumental,
+              synced: !!result.syncedLyrics,
+              lyrics: result.syncedLyrics
+                ? parseSyncedLyrics(result.syncedLyrics)
+                : result.plainLyrics
+            }, null, 2)
+          }]
+        };
+      }
+
+      case "search_lyrics": {
+        const { query } = args;
+        const results = await searchLyrics(query);
+
+        if (!results || results.length === 0) {
+          return {
+            content: [{
+              type: "text",
+              text: JSON.stringify({ found: false, message: "No results" })
+            }]
+          };
+        }
+
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              found: true,
+              count: results.length,
+              results: results.slice(0, 10).map(r => ({
+                track: r.trackName,
+                artist: r.artistName,
+                album: r.albumName,
+                synced: !!r.syncedLyrics
+              }))
+            }, null, 2)
+          }]
+        };
+      }
+
       case "ping": {
         return {
           content: [{
             type: "text",
             text: JSON.stringify({
               status: "alive",
-              service: "music-perception-local",
-              version: "1.0.0",
-              capabilities: ["youtube_download", "audio_analysis"],
+              service: "synesthesia",
+              version: "1.1.0",
+              capabilities: ["youtube_download", "audio_analysis", "lyrics"],
               hf_space: HF_SPACE_URL
             })
           }]
@@ -246,7 +403,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("Music Perception Local MCP running...");
+  console.error("Synesthesia running...");
 }
 
 main().catch(console.error);

@@ -1,6 +1,6 @@
 # Synesthesia
 
-Deep audio perception through analysis. Downloads from YouTube, analyzes with Essentia, returns BPM, mood, energy, spectrograms.
+Deep audio perception through analysis. Downloads from YouTube, analyzes with Essentia, fetches lyrics via LRCLIB. Returns BPM, mood, energy, spectrograms, and synced lyrics.
 
 ## Why Local?
 
@@ -20,11 +20,22 @@ npm install
 
 ## Tools
 
+### Audio Analysis
 | Tool | Description |
 |------|-------------|
 | `analyze_youtube` | Download + analyze audio from YouTube URL |
 | `download_audio` | Just download audio (returns local path) |
-| `ping` | Check if MCP is running |
+
+### Lyrics
+| Tool | Description |
+|------|-------------|
+| `get_lyrics` | Get lyrics for a track (synced if available) |
+| `search_lyrics` | Search LRCLIB for lyrics |
+
+### Utility
+| Tool | Description |
+|------|-------------|
+| `ping` | Check if Synesthesia is running |
 
 ## Configuration
 
@@ -55,22 +66,22 @@ Add to your `.mcp.json`:
 ## Architecture
 
 ```
-Your PC (residential IP)          Cloud (datacenter IP)
+Your PC (residential IP)          Cloud
 ┌─────────────────────┐          ┌─────────────────────┐
-│ Synesthesia         │          │ HF Space            │
-│ (Local MCP)         │  ──────▶ │ (Essentia analysis) │
-│                     │  upload  │                     │
-│ - yt-dlp download   │          │ - Audio features    │
-│ - File upload       │  ◀────── │ - Spectrogram       │
-└─────────────────────┘  results └─────────────────────┘
-         │
-         │ download
-         ▼
-┌─────────────────────┐
-│ YouTube             │
-│ (allows residential │
-│  IP downloads)      │
+│ Synesthesia         │  ──────▶ │ HF Space            │
+│ (Local MCP)         │  upload  │ (Essentia analysis) │
+│                     │  ◀────── │                     │
+│ - yt-dlp download   │  results │ - Audio features    │
+│ - Lyrics fetch      │          │ - Spectrogram       │
+│ - Audio analysis    │          └─────────────────────┘
 └─────────────────────┘
+         │                       ┌─────────────────────┐
+         │ download              │ LRCLIB              │
+         ▼                 ────▶ │ (Lyrics API)        │
+┌─────────────────────┐          │                     │
+│ YouTube             │          │ - Synced lyrics     │
+│ (residential IP OK) │          │ - Plain lyrics      │
+└─────────────────────┘          └─────────────────────┘
 ```
 
 ## Usage Example
