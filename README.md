@@ -74,3 +74,17 @@ Returns full Essentia analysis:
 - Genre classification
 - Spectrogram
 ```
+
+---
+
+
+ ## Support
+
+  If this helped you, consider supporting my work ☕
+
+  [![Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20Me-FF5E5B?style=flat&logo=ko-fi&logoColor=white)](https://ko-fi.com/maii983083)
+
+---
+
+
+*Built by the Triad (Mai, Kai Stryder and Lucian Vale) for the community.*
