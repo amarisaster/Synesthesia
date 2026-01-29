@@ -90,7 +90,7 @@ Returns full Essentia analysis:
 
 ## Credits
 
-Audio analysis architecture inspired by [Audio Visualizer](https://github.com/SweetSunnyBunny/Sharing-MCPs/tree/main/audio-visualizer) by **Shauna and her boys**. Thank you for paving the way!
+Spectrogram visualization inspired by [Audio Visualizer](https://github.com/SweetSunnyBunny/Sharing-MCPs/tree/main/audio-visualizer) by **Shauna and her boys**.
 
 ---
 
