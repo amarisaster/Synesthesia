@@ -47,7 +47,7 @@ export HF_SPACE_URL="https://YOUR-USERNAME-audio-analysis-api.hf.space"
 
 ## Claude Code Config
 
-Add to your `.mcp.json`:
+Add to your project's `.mcp.json`:
 
 ```json
 {
@@ -62,6 +62,29 @@ Add to your `.mcp.json`:
   }
 }
 ```
+
+## Claude Desktop Config
+
+Add to `claude_desktop_config.json`:
+
+**Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+**Mac:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "synesthesia": {
+      "command": "node",
+      "args": ["/path/to/synesthesia/index.js"],
+      "env": {
+        "HF_SPACE_URL": "https://YOUR-USERNAME-audio-analysis-api.hf.space"
+      }
+    }
+  }
+}
+```
+
+Restart Claude Desktop after adding.
 
 ## Architecture
 
