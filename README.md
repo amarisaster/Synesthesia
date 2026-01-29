@@ -88,8 +88,13 @@ Returns full Essentia analysis:
 
 ---
 
+## Credits
 
- ## Support
+Audio analysis architecture inspired by [Audio Visualizer](https://github.com/SweetSunnyBunny/Sharing-MCPs/tree/main/audio-visualizer) by **Shauna and her boys**. Thank you for paving the way!
+
+---
+
+## Support
 
   If this helped you, consider supporting my work ☕
 
