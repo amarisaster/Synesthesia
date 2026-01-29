@@ -16,8 +16,8 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { randomUUID } from "crypto";
 
-// HF Space URL - update if your space URL changes
-const HF_SPACE_URL = "https://amarisaster-audio-analysis-api.hf.space";
+// HF Space URL - set via environment variable or update default
+const HF_SPACE_URL = process.env.HF_SPACE_URL || "https://YOUR-USERNAME-audio-analysis-api.hf.space";
 
 /**
  * Download audio from YouTube using yt-dlp

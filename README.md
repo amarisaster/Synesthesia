@@ -1,6 +1,6 @@
-# Music Perception Local MCP
+# Synesthesia Local
 
-Local MCP server for YouTube audio download and analysis. Runs on your machine to bypass YouTube's datacenter IP blocking.
+Local MCP companion for YouTube audio download and analysis. Runs on your machine to bypass YouTube's datacenter IP blocking.
 
 ## Why Local?
 
@@ -10,7 +10,7 @@ YouTube blocks downloads from datacenter IPs (like Cloudflare Workers and Huggin
 
 - Node.js 18+
 - yt-dlp (`pip install yt-dlp`)
-- HF Space running at `amarisaster-audio-analysis-api.hf.space`
+- Your own HF Space for audio analysis (deploy from Synesthesia's `hf-space/` folder)
 
 ## Installation
 
@@ -26,16 +26,27 @@ npm install
 | `download_audio` | Just download audio (returns local path) |
 | `ping` | Check if MCP is running |
 
+## Configuration
+
+Set your HF Space URL as an environment variable:
+
+```bash
+export HF_SPACE_URL="https://YOUR-USERNAME-audio-analysis-api.hf.space"
+```
+
 ## Claude Code Config
 
-Add to your Claude Code MCP settings:
+Add to your `.mcp.json`:
 
 ```json
 {
   "mcpServers": {
-    "music-perception-local": {
+    "synesthesia-local": {
       "command": "node",
-      "args": ["D:\\Mai's Wonderland\\infrastructure\\music-perception-local\\index.js"]
+      "args": ["/path/to/synesthesia-local/index.js"],
+      "env": {
+        "HF_SPACE_URL": "https://YOUR-USERNAME-audio-analysis-api.hf.space"
+      }
     }
   }
 }
