@@ -1,6 +1,6 @@
-# Synesthesia Local
+# Synesthesia
 
-Local MCP companion for YouTube audio download and analysis. Runs on your machine to bypass YouTube's datacenter IP blocking.
+Deep audio perception through analysis. Downloads from YouTube, analyzes with Essentia, returns BPM, mood, energy, spectrograms.
 
 ## Why Local?
 
@@ -41,9 +41,9 @@ Add to your `.mcp.json`:
 ```json
 {
   "mcpServers": {
-    "synesthesia-local": {
+    "synesthesia": {
       "command": "node",
-      "args": ["/path/to/synesthesia-local/index.js"],
+      "args": ["/path/to/synesthesia/index.js"],
       "env": {
         "HF_SPACE_URL": "https://YOUR-USERNAME-audio-analysis-api.hf.space"
       }
@@ -57,8 +57,8 @@ Add to your `.mcp.json`:
 ```
 Your PC (residential IP)          Cloud (datacenter IP)
 ┌─────────────────────┐          ┌─────────────────────┐
-│ music-perception-   │          │ HF Space            │
-│ local MCP           │  ──────▶ │ (Essentia analysis) │
+│ Synesthesia         │          │ HF Space            │
+│ (Local MCP)         │  ──────▶ │ (Essentia analysis) │
 │                     │  upload  │                     │
 │ - yt-dlp download   │          │ - Audio features    │
 │ - File upload       │  ◀────── │ - Spectrogram       │
