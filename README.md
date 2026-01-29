@@ -67,7 +67,7 @@ Add to your project's `.mcp.json`:
 
 Add to `claude_desktop_config.json`:
 
-**Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+**Windows:** `%APPDATA%\Claude\claude_desktop_config.json`    
 **Mac:** `~/Library/Application Support/Claude/claude_desktop_config.json`
 
 ```json
