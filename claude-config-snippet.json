@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "music-perception-local": {
+      "command": "node",
+      "args": ["D:\\Mai's Wonderland\\infrastructure\\music-perception-local\\index.js"],
+      "description": "Local YouTube download + audio analysis (bypasses datacenter IP blocking)"
+    }
+  }
+}

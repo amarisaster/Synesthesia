@@ -1,0 +1,15 @@
+{
+  "name": "music-perception-local",
+  "version": "1.0.0",
+  "description": "Local MCP for YouTube audio download + analysis (residential IP)",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.5.0",
+    "node-fetch": "^3.3.2",
+    "form-data": "^4.0.0"
+  }
+}
