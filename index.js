@@ -90,6 +90,7 @@ async function downloadYouTube(url) {
 
   return new Promise((resolve, reject) => {
     const args = [
+      "--ffmpeg-location", "C:\\Users\\AMD\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\\ffmpeg-8.0.1-full_build\\bin",
       "-x",                          // Extract audio
       "--audio-format", "mp3",       // Convert to mp3
       "--audio-quality", "192K",     // Good quality
