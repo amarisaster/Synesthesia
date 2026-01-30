@@ -83,6 +83,98 @@ function parseSyncedLyrics(synced) {
 }
 
 /**
+ * Get YouTube video metadata using yt-dlp
+ */
+async function getYouTubeMetadata(url) {
+  return new Promise((resolve, reject) => {
+    const args = ["--dump-json", "--no-playlist", url];
+    const proc = spawn("yt-dlp", args, { shell: true });
+
+    let stdout = "";
+    let stderr = "";
+
+    proc.stdout.on("data", (data) => {
+      stdout += data.toString();
+    });
+
+    proc.stderr.on("data", (data) => {
+      stderr += data.toString();
+    });
+
+    proc.on("close", (code) => {
+      if (code === 0 && stdout) {
+        try {
+          const metadata = JSON.parse(stdout);
+          resolve({
+            title: metadata.title || "",
+            uploader: metadata.uploader || metadata.channel || "",
+            artist: metadata.artist || metadata.creator || metadata.uploader || "",
+            track: metadata.track || "",
+            album: metadata.album || "",
+            description: metadata.description || "",
+            duration: metadata.duration || 0,
+            thumbnail: metadata.thumbnail || ""
+          });
+        } catch (e) {
+          reject(new Error(`Failed to parse metadata: ${e.message}`));
+        }
+      } else {
+        reject(new Error(`yt-dlp metadata failed (code ${code}): ${stderr}`));
+      }
+    });
+
+    proc.on("error", (err) => {
+      reject(new Error(`Failed to spawn yt-dlp: ${err.message}`));
+    });
+  });
+}
+
+/**
+ * Parse YouTube title to extract artist and track
+ * Handles common formats: "Artist - Track", "Track by Artist", etc.
+ */
+function parseYouTubeTitle(title, uploader) {
+  // Remove common suffixes
+  let cleaned = title
+    .replace(/\(official\s*(music\s*)?video\)/gi, "")
+    .replace(/\(official\s*audio\)/gi, "")
+    .replace(/\(lyric\s*video\)/gi, "")
+    .replace(/\(lyrics\)/gi, "")
+    .replace(/\[official\s*(music\s*)?video\]/gi, "")
+    .replace(/\[official\s*audio\]/gi, "")
+    .replace(/\(audio\)/gi, "")
+    .replace(/\(visualizer\)/gi, "")
+    .replace(/\(hd\)/gi, "")
+    .replace(/\(hq\)/gi, "")
+    .replace(/【.*?】/g, "")
+    .trim();
+
+  // Try "Artist - Track" format
+  if (cleaned.includes(" - ")) {
+    const parts = cleaned.split(" - ");
+    return {
+      artist: parts[0].trim(),
+      track: parts.slice(1).join(" - ").trim()
+    };
+  }
+
+  // Try "Track by Artist" format
+  const byMatch = cleaned.match(/^(.+?)\s+by\s+(.+)$/i);
+  if (byMatch) {
+    return {
+      artist: byMatch[2].trim(),
+      track: byMatch[1].trim()
+    };
+  }
+
+  // Fallback: use uploader as artist, title as track
+  return {
+    artist: uploader,
+    track: cleaned
+  };
+}
+
+/**
  * Download audio from YouTube using yt-dlp
  */
 async function downloadYouTube(url) {
@@ -184,7 +276,7 @@ async function analyzeWithHFSpace(filePath) {
  * Main server setup
  */
 const server = new Server(
-  { name: "synesthesia", version: "1.1.0" },
+  { name: "synesthesia", version: "1.2.0" },
   { capabilities: { tools: {} } }
 );
 
@@ -193,7 +285,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
     {
       name: "analyze_youtube",
-      description: "Download audio from YouTube and analyze it. Runs locally to bypass datacenter IP blocking.",
+      description: "Full audio perception: downloads from YouTube, analyzes audio features (BPM, key, energy), extracts metadata (title, artist), fetches synced lyrics, and generates spectrogram visualization. Runs locally to bypass datacenter IP blocking.",
       inputSchema: {
         type: "object",
         properties: {
@@ -271,12 +363,47 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "analyze_youtube": {
         const { url } = args;
 
-        // Download
-        const filePath = await downloadYouTube(url);
+        // Get metadata and download in parallel
+        const [metadata, filePath] = await Promise.all([
+          getYouTubeMetadata(url).catch(e => ({ error: e.message })),
+          downloadYouTube(url)
+        ]);
 
         try {
-          // Analyze
+          // Parse title to get artist/track
+          let songInfo = { artist: "", track: "" };
+          if (metadata && !metadata.error) {
+            // Prefer embedded metadata if available
+            if (metadata.artist && metadata.track) {
+              songInfo = { artist: metadata.artist, track: metadata.track };
+            } else {
+              // Parse from title
+              songInfo = parseYouTubeTitle(metadata.title, metadata.uploader);
+            }
+          }
+
+          // Analyze audio
           const analysis = await analyzeWithHFSpace(filePath);
+
+          // Try to fetch lyrics
+          let lyrics = null;
+          if (songInfo.artist && songInfo.track) {
+            try {
+              const lyricsResult = await fetchLyrics(songInfo.track, songInfo.artist);
+              if (lyricsResult) {
+                lyrics = {
+                  found: true,
+                  synced: !!lyricsResult.syncedLyrics,
+                  content: lyricsResult.syncedLyrics
+                    ? parseSyncedLyrics(lyricsResult.syncedLyrics)
+                    : lyricsResult.plainLyrics
+                };
+              }
+            } catch (e) {
+              // Lyrics fetch failed, continue without them
+              lyrics = { found: false, error: e.message };
+            }
+          }
 
           return {
             content: [{
@@ -285,7 +412,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 success: true,
                 source: "youtube",
                 url,
-                analysis
+                metadata: metadata.error ? null : {
+                  title: metadata.title,
+                  artist: songInfo.artist,
+                  track: songInfo.track,
+                  uploader: metadata.uploader,
+                  duration: metadata.duration,
+                  thumbnail: metadata.thumbnail
+                },
+                analysis,
+                lyrics
               }, null, 2)
             }]
           };
