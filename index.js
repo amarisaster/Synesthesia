@@ -17,7 +17,7 @@ import { join } from "path";
 import { randomUUID } from "crypto";
 
 // HF Space URL - set via environment variable or update default
-const HF_SPACE_URL = process.env.HF_SPACE_URL || "https://YOUR-USERNAME-audio-analysis-api.hf.space";
+const HF_SPACE_URL = process.env.HF_SPACE_URL || "https://itsamaris-audio-analysis-api.hf.space";
 
 // LRCLIB for lyrics
 const LRCLIB_BASE = "https://lrclib.net/api";
