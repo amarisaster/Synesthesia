@@ -174,7 +174,10 @@ async function analyzeWithHFSpace(filePath) {
   }
 
   const result = await analyzeResponse.json();
-  return result.data?.[0] || result;
+  const analysis = result.data?.[0] || result;
+  const spectrogram = result.data?.[1] || null;  // base64 PNG image
+
+  return { ...analysis, spectrogram };
 }
 
 /**
