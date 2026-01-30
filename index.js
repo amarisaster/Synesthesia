@@ -152,13 +152,20 @@ async function analyzeWithHFSpace(filePath) {
   const uploadResult = await uploadResponse.json();
   const uploadedPath = uploadResult[0]; // Gradio returns array of paths
 
+  // Create Gradio file object (required format for Gradio 3.x)
+  const fileObj = {
+    name: uploadedPath,
+    data: uploadedPath,
+    is_file: true
+  };
+
   // Now call the analyze endpoint
   const analyzeResponse = await fetch(`${HF_SPACE_URL}/api/predict`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       fn_index: 0,  // analyze_file function
-      data: [uploadedPath, null]  // file path, no YouTube URL
+      data: [fileObj, true]  // file object, generate visualization
     })
   });
 
